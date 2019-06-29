@@ -6,6 +6,8 @@
     director(M, D) <- movie M was directed by director D
     actor(M, A, R) <- actor A played role R in movie M
     actress(M, A, R) <- actress A played role R in movie M
+    %( condition -> then_clause ; else_clause )
+    
 */
 
 escribir:-
@@ -29,9 +31,10 @@ menu:-
 	writeln('Dame una opcion:'),
 	writeln('1. Encontrar informacion de pelicula' ),
 	writeln('2. Agregar informacion de una pelicula'),
-	writeln('3. Modificar informacion de una pelicula'),
-	writeln('4. Borrar informacion de una pelicula'),
-	writeln('5. Salir'),
+	writeln('3. Agregar una nueva pelicula'),
+	writeln('4. Modificar informacion de una pelicula'),
+	writeln('5. Borrar informacion de una pelicula'),
+	writeln('6. Salir'),
 	read(Opcion),
 	hazOpcion(Opcion).
 
@@ -39,6 +42,7 @@ hazOpcion(1):-
 	writeln('Encontrar informacion de pelicula'),
 	writeln('De que pelicula quieres saber'),
 	read(Pelicula),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
 	write('Año: '),movie(Pelicula,Y),writeln(Y),
 	write('Director(es):'),findall(D,(movie(Pelicula,Y),director(Pelicula,D)),B),writeln(B),
 	write('actores: '),findall(A,actor(Pelicula,A,_),L2),write(L2),nl,
@@ -49,9 +53,12 @@ hazOpcion(2):-
 	writeln('Agregar informacion de una pelicula'),
 	writeln('A que pelicula le quieres agregar informacion'),
 	read(Pelicula),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
 	writeln('Que tipo de informacion quiere agregar'),
-	subOpciones,
-	writeln('5. Agregar nueva pelicula'), 
+	%No utilizo subMenu porque contiene año y el año se agrega cuando se crea la pelicula.
+	writeln('1. Actor'),
+	writeln('2. Actris'),
+	writeln('3. Director'),
 	read(Info),
 	switch(Info,[
 		1 : (writeln('Dame el nombre en minusculas'),read(Actor),writeln('Dame el rol en minusculas'),read(Rol),
@@ -59,21 +66,27 @@ hazOpcion(2):-
 		2 : (writeln('Dame el nombre en minusculas'),read(Actor),writeln('Dame el rol en minusculas'),read(Rol),
 			  assert(actress(Pelicula,Actor,Rol))),   																	%open('movies.pl',append, S),write(S,actress(Pelicula,Actor,Rol)),put_char(S,.),nl(S),close(S) ),
 		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),assert(director(Pelicula,Director))),	%open('movies.pl',append, S),write(S,director(Pelicula,Director)),put_char(S,.),nl(S),close(S) ),
-		4 : (writeln('Dame el año en que se estreno la pelicula'),read(Year),assert(movie(Pelicula,Year))),				%open('movies.pl',append, S),write(S,movie(Pelicula,Year)),put_char(S,.),nl(S),close(S)  ),
-		5 : (writeln('Dame el titulo de la pelicula'),read(Nueva),writeln('Dame el año de la pelicula'),read(Year),
-			assert(movie(Nueva,Year))) 																					%open('movies.pl',append, S),write(S,movie(Nueva,Year)),put_char(S,.),nl(S),close(S) )
+		4 : (writeln('Dame el año en que se estreno la pelicula'),read(Year),assert(movie(Pelicula,Year)))				%open('movies.pl',append, S),write(S,movie(Pelicula,Year)),put_char(S,.),nl(S),close(S)  ),	 																				
 		]),
+	escribir,
 	menu.
 	
-
 hazOpcion(3):-
+	writeln('Dame el titulo de la nueva pelicula'),
+	read(Pelicula),
+	writeln('Dame el año de la pelicula'),
+	read(Year),
+	assert(movie(Pelicula,Year)).
+
+hazOpcion(4):-
 	writeln('Modificar informacion de una pelicula'),
 	writeln('Que pelicula quiere modificar'),
 	read(Pelicula),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
 	writeln('Que tipo de informacion quiere modificar'),
 	menu.
 
-hazOpcion(4):-
+hazOpcion(5):-
 	writeln('Borrar informacion de una pelicula'),
 	writeln('A que pelicula le quieres borar informacion'),
 	read(Pelicula),
@@ -82,13 +95,17 @@ hazOpcion(4):-
 	writeln('5. Borrar toda la informacion de una pelicula'),
 	read(Info),
 	switch(Info,[
-		1 : (writeln('Dame el nombre del actor, en minusculas'),read(Actor),
-			open('movies.pl',erase, S),erase(actor(Pelicula,Actor,_)),nl(S),close(S) ),
+		1 : (writeln('Dame el nombre del actor, en minusculas'),read(Actor),retract(actor(Pelicula,Actor,_))),	%open('movies.pl',erase, S),erase(actor(Pelicula,Actor,_)),nl(S),close(S) ),
+		2 : (writeln('Dame el nombre de la actris en minusculas'),read(Actor),retract(actress(Pelicula,Actor,_))),
+		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),retract(director(Pelicula,Director))),
+		4 :	(writeln('Borrando el año'),retract(movie(Pelicula,_)),assert(movie(Pelicula,_))),
 		5: (borra) %revisar 
 		]),
+	escribir,
 	menu.
 	
-hazOpcion(5):-
+hazOpcion(6):-
+	%writeln('Realizando todos los cambios en la base de datos')
 	writeln('Hasta pronto camarada').
 
 subOpciones:-
