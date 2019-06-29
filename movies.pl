@@ -15,9 +15,9 @@ escribir:-
 	tell('dataBase.pl'),
 	%write(':-dynamic (actor/3),(movie/2),(actress/3),(director/2).'),nl,
 	listing(escribir),
+	listing(masDeUno),
 	listing(menu),
 	listing(hazOpcion),
-	listing(subOpciones),
 	listing(switch),
 	listing(movie/2),
 	listing(director/2),
@@ -26,6 +26,7 @@ escribir:-
 	told,
 	tell(OldStream).
 	
+masDeUno(Pelicula):- findall(D, director(Pelicula,D),B),length(B,Num), Num > 1. 
 
 menu:-
 	writeln('Dame una opcion:'),
@@ -42,7 +43,7 @@ hazOpcion(1):-
 	writeln('Encontrar informacion de pelicula'),
 	writeln('De que pelicula quieres saber'),
 	read(Pelicula),
-	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),menu),
 	write('Año: '),movie(Pelicula,Y),writeln(Y),
 	write('Director(es):'),findall(D,(movie(Pelicula,Y),director(Pelicula,D)),B),writeln(B),
 	write('actores: '),findall(A,actor(Pelicula,A,_),L2),write(L2),nl,
@@ -53,9 +54,9 @@ hazOpcion(2):-
 	writeln('Agregar informacion de una pelicula'),
 	writeln('A que pelicula le quieres agregar informacion'),
 	read(Pelicula),
-	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),menu),
 	writeln('Que tipo de informacion quiere agregar'),
-	%No utilizo subMenu porque contiene año y el año se agrega cuando se crea la pelicula.
+	%No esta contiene año porque el año se agrega cuando se crea la pelicula.
 	writeln('1. Actor'),
 	writeln('2. Actris'),
 	writeln('3. Director'),
@@ -65,8 +66,7 @@ hazOpcion(2):-
 			  assert(actor(Pelicula,Actor,Rol))),  																		%open('movies.pl',append, S),write(S,actor(Pelicula,Actor,Rol)),put_char(S,.),nl(S),close(S)  ),
 		2 : (writeln('Dame el nombre en minusculas'),read(Actor),writeln('Dame el rol en minusculas'),read(Rol),
 			  assert(actress(Pelicula,Actor,Rol))),   																	%open('movies.pl',append, S),write(S,actress(Pelicula,Actor,Rol)),put_char(S,.),nl(S),close(S) ),
-		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),assert(director(Pelicula,Director))),	%open('movies.pl',append, S),write(S,director(Pelicula,Director)),put_char(S,.),nl(S),close(S) ),
-		4 : (writeln('Dame el año en que se estreno la pelicula'),read(Year),assert(movie(Pelicula,Year)))				%open('movies.pl',append, S),write(S,movie(Pelicula,Year)),put_char(S,.),nl(S),close(S)  ),	 																				
+		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),assert(director(Pelicula,Director)))	%open('movies.pl',append, S),write(S,director(Pelicula,Director)),put_char(S,.),nl(S),close(S) ),
 		]),
 	escribir,
 	menu.
@@ -80,10 +80,33 @@ hazOpcion(3):-
 
 hazOpcion(4):-
 	writeln('Modificar informacion de una pelicula'),
-	writeln('Que pelicula quiere modificar'),
+	writeln('A que pelicula le quieres agregar informacion'),
 	read(Pelicula),
-	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),fail),
-	writeln('Que tipo de informacion quiere modificar'),
+	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),menu),
+	writeln('Que informacion quieres modificar'),
+	writeln('1. Titulo de pelicula'),
+	writeln('2. Año de estreno de pelicula'),
+	writeln('3. Director de una pelicula'),
+	writeln('4. Rol de actor'),
+	writeln('5. Rol de actris'),
+	read(Info),	
+	switch(Info,[
+		1: (writeln('Dame el nuevo titulo de la pelicula con _ en vez de espacios y minusculas'),
+			read(Nuevo)  ),
+		2: (writeln('Dame el año de estreno'),read(Year),retract(movie(Pelicula,_)),assert(movie(Pelicula,Year)) ),
+		3: (    (masDeUno(Pelicula) ->  
+				(writeln('La pelicula tiene mas de un director'),writeln('Dame el nombre del viejo director'),
+				read(Viejo),writeln('Ahora dame el nombre del nuevo director'),read(Director),
+				retract(director(Pelicula,Viejo)), assert(director(Pelicula,Director))) 
+				; 
+				(writeln('Dame el nuevo director'),read(Director), 
+				retract(director(Pelicula,_)), assert(director(Pelicula,Director)))       
+			)),
+		4: (writeln('Dime a que actor le quieres cambiar el Rol'),read(Actor),writeln('Dame su nuevo rol'),read(Rol),
+			retract(actor(Pelicula,Actor,_)),assert(actor(Pelicula,Actor,Rol))), 	
+		5: (writeln('Dime a que actris le quieres cambiar el Rol'),read(Actor),writeln('Dame su nuevo rol'),read(Rol),
+			retract(actress(Pelicula,Actor,_)),assert(actress(Pelicula,Actor,Rol))) 	
+	]),
 	menu.
 
 hazOpcion(5):-
@@ -91,7 +114,10 @@ hazOpcion(5):-
 	writeln('A que pelicula le quieres borar informacion'),
 	read(Pelicula),
 	writeln('Que tipo de informacion quiere borrar'),
-	subOpciones,
+	writeln('1. Actor'),
+	writeln('2. Actris'),
+	writeln('3. Director'),
+	writeln('4. Año'),
 	writeln('5. Borrar toda la informacion de una pelicula'),
 	read(Info),
 	switch(Info,[
@@ -99,20 +125,17 @@ hazOpcion(5):-
 		2 : (writeln('Dame el nombre de la actris en minusculas'),read(Actor),retract(actress(Pelicula,Actor,_))),
 		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),retract(director(Pelicula,Director))),
 		4 :	(writeln('Borrando el año'),retract(movie(Pelicula,_)),assert(movie(Pelicula,_))),
-		5: (borra) %revisar 
+		5 : (writeln('Borrando todo...'),retract(movie(Pelicula,_)),retractall(director(Pelicula,_)),
+			 retractall(actor(Pelicula,_,_)),retractall(actress(Pelicula,_,_)))  
 		]),
 	escribir,
 	menu.
+
 	
 hazOpcion(6):-
 	%writeln('Realizando todos los cambios en la base de datos')
 	writeln('Hasta pronto camarada').
 
-subOpciones:-
-	writeln('1. Actor'),
-	writeln('2. Actris'),
-	writeln('3. Director'),
-	writeln('4. Año').
 
 switch(X, [Val:Goal|Cases]) :-
     ( X=Val ->
@@ -121,7 +144,8 @@ switch(X, [Val:Goal|Cases]) :-
         switch(X, Cases)
     ).
 	
-
+	
+							
 
 %hazDatos:- open('dataBase.pl',append,S),set_output(S),listing(movie/2),listing(director/2),listing(actor/3),listing(actress/3),nl(S),close(S).
 

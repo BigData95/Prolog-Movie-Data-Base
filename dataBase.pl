@@ -2,9 +2,9 @@ escribir :-
     telling(OldStream),
     tell('dataBase.pl'),
     listing(escribir),
+    listing(masDeUno),
     listing(menu),
     listing(hazOpcion),
-    listing(subOpciones),
     listing(switch),
     listing(movie/2),
     listing(director/2),
@@ -12,6 +12,11 @@ escribir :-
     listing(actress/3),
     told,
     tell(OldStream).
+
+masDeUno(Pelicula) :-
+    findall(D, director(Pelicula, D), B),
+    length(B, Num),
+    Num>1.
 
 menu :-
     writeln('Dame una opcion:'),
@@ -31,7 +36,7 @@ hazOpcion(1) :-
     (   movie(Pelicula, _)
     ->  writeln('La pelicula esta en la base de datos')
     ;   writeln('No se encuentra en la base de datos'),
-        fail
+        menu
     ),
     write('Año: '),
     movie(Pelicula, Y),
@@ -60,17 +65,18 @@ hazOpcion(2) :-
     (   movie(Pelicula, _)
     ->  writeln('La pelicula esta en la base de datos')
     ;   writeln('No se encuentra en la base de datos'),
-        fail
+        menu
     ),
     writeln('Que tipo de informacion quiere agregar'),
-    subOpciones,
+    writeln('1. Actor'),
+    writeln('2. Actris'),
+    writeln('3. Director'),
     read(Info),
     switch(Info,
            
            [ 1:(writeln('Dame el nombre en minusculas'), read(Actor), writeln('Dame el rol en minusculas'), read(Rol), assert(actor(Pelicula, Actor, Rol))),
              2:(writeln('Dame el nombre en minusculas'), read(Actor), writeln('Dame el rol en minusculas'), read(Rol), assert(actress(Pelicula, Actor, Rol))),
-             3:(writeln('Dame el nombre del director en minusculas'), read(Director), assert(director(Pelicula, Director))),
-             4:(writeln('Dame el año en que se estreno la pelicula'), read(Year), assert(movie(Pelicula, Year)))
+             3:(writeln('Dame el nombre del director en minusculas'), read(Director), assert(director(Pelicula, Director)))
            ]),
     escribir,
     menu.
@@ -80,18 +86,15 @@ hazOpcion(3) :-
     writeln('Dame el año de la pelicula'),
     read(Year),
     assert(movie(Pelicula, Year)).
-hazOpcion(4) :-
-    writeln('Modificar informacion de una pelicula'),
-    writeln('Que pelicula quiere modificar'),
-    read(Pelicula),
-    writeln('Que tipo de informacion quiere modificar'),
-    menu.
 hazOpcion(5) :-
     writeln('Borrar informacion de una pelicula'),
     writeln('A que pelicula le quieres borar informacion'),
     read(Pelicula),
     writeln('Que tipo de informacion quiere borrar'),
-    subOpciones,
+    writeln('1. Actor'),
+    writeln('2. Actris'),
+    writeln('3. Director'),
+    writeln('4. Año'),
     writeln('5. Borrar toda la informacion de una pelicula'),
     read(Info),
     switch(Info,
@@ -100,18 +103,12 @@ hazOpcion(5) :-
              2:(writeln('Dame el nombre de la actris en minusculas'), read(Actor), retract(actress(Pelicula, Actor, _))),
              3:(writeln('Dame el nombre del director en minusculas'), read(Director), retract(director(Pelicula, Director))),
              4:(writeln('Borrando el año'), retract(movie(Pelicula, _)), assert(movie(Pelicula, _))),
-             5:borra
+             5:(writeln('Borrando todo...'), retract(movie(Pelicula, _)), retractall(director(Pelicula, _)), retractall(actor(Pelicula, _, _)), retractall(actress(Pelicula, _, _)))
            ]),
     escribir,
     menu.
 hazOpcion(6) :-
     writeln('Hasta pronto camarada').
-
-subOpciones :-
-    writeln('1. Actor'),
-    writeln('2. Actris'),
-    writeln('3. Director'),
-    writeln('4. Año').
 
 switch(X, [Val:Goal|Cases]) :-
     (   X=Val
@@ -185,7 +182,6 @@ movie(the_perfect_score, 2004).
 movie(the_spongebob_squarepants_movie, 2004).
 movie(untitled_woody_allen_fall_project_2006, 2006).
 movie(a_view_from_the_bridge, 2006).
-movie(anna, 1990).
 
 :- dynamic director/2.
 
