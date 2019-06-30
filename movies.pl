@@ -1,4 +1,31 @@
+/* 
+Martinez Vargas Edgar Ivan
+2153043702
 
+-Se hace la manipulación de la base de datos desde la memoria.
+
+-Se agregan elementos con assert o se eliminan con retract y justo después se escriben
+en el archivo dataBase.pl gracias al predicador "escribir". Este predicado extrae lo que está en memoria y lo escribe
+en la base de datos. Por lo cual no es necesario "open".
+
+-Despues de cualquier modificacion se llama a "escribir" asi se pueden ver los cambios reflajados en "dataBase.pl"
+antes de que termine el programa. 
+
+-En dataBase.pl tambien se copian los predicados(gracias a "escribir") esto es por si se quiere conservan
+los cambios a la base de datos a través de las distintas ejecuciones del programa
+(Por lo cual se tendría que ejecutar dataBase.pl).
+
+-Si se ejecuta desde movies.pl, después de cualquier cambio en una segunda ejecución
+se borraran los cambios realizados por la primera ejecución.
+
+-Los elementos en movies.pl nunca se modifican, solo los de dataBase.pl
+por lo que si se quiere "empezar desde la información original" basta con ejecutar "escribir." desde movies.pl
+
+-El predicado switch emula un "switch case" de otros lenguajes, solo que este es recursivo. Me pareció una bonita solución
+para no hacer más predicados. Y me parece que se lee mas facil el código.
+
+
+*/
 
 /* DATABASE
 
@@ -6,7 +33,6 @@
     director(M, D) <- movie M was directed by director D
     actor(M, A, R) <- actor A played role R in movie M
     actress(M, A, R) <- actress A played role R in movie M
-    %( condition -> then_clause ; else_clause )
     
 */
 
@@ -68,6 +94,7 @@ hazOpcion(2):-
 			  assert(actress(Pelicula,Actor,Rol))),   																	%open('movies.pl',append, S),write(S,actress(Pelicula,Actor,Rol)),put_char(S,.),nl(S),close(S) ),
 		3 : (writeln('Dame el nombre del director en minusculas'),read(Director),assert(director(Pelicula,Director)))	%open('movies.pl',append, S),write(S,director(Pelicula,Director)),put_char(S,.),nl(S),close(S) ),
 		]),
+	writeln('Actualizando base de datos...'),
 	escribir,
 	menu.
 	
@@ -76,11 +103,15 @@ hazOpcion(3):-
 	read(Pelicula),
 	writeln('Dame el año de la pelicula'),
 	read(Year),
-	assert(movie(Pelicula,Year)).
+	assert(movie(Pelicula,Year)),
+	writeln('Actualizando base de datos...'),
+	escribir.
+	
+
 
 hazOpcion(4):-
 	writeln('Modificar informacion de una pelicula'),
-	writeln('A que pelicula le quieres agregar informacion'),
+	writeln('A que pelicula le quieres modificar informacion'),
 	read(Pelicula),
 	(movie(Pelicula,_) -> writeln('La pelicula esta en la base de datos') ; writeln('No se encuentra en la base de datos'),menu),
 	writeln('Que informacion quieres modificar'),
@@ -92,7 +123,14 @@ hazOpcion(4):-
 	read(Info),	
 	switch(Info,[
 		1: (writeln('Dame el nuevo titulo de la pelicula con _ en vez de espacios y minusculas'),
-			read(Nuevo)  ),
+			read(Nuevo),movie(Pelicula,Year),findall(D,director(Pelicula,D),Ld),
+			findall((A1,P1),actor(Pelicula,A1,P1),La1),findall((A2,P2),actress(Pelicula,A2,P2),La2),
+			retract(movie(Pelicula,Year)),retractall(director(Pelicula,_)),retractall(actor(Pelicula,_,_)),
+			retractall(actress(Pelicula,_,_)),assert(movie(Nuevo,Year)),
+			(member(X,Ld),assert(director(Nuevo,X)),fail;true),
+			(member((X,Y),La1),assert(actor(Nuevo,X,Y)),fail;true),
+			(member((X,Y),La2),assert(actress(Nuevo,X,Y)),fail;true)
+			 ),
 		2: (writeln('Dame el año de estreno'),read(Year),retract(movie(Pelicula,_)),assert(movie(Pelicula,Year)) ),
 		3: (    (masDeUno(Pelicula) ->  
 				(writeln('La pelicula tiene mas de un director'),writeln('Dame el nombre del viejo director'),
@@ -107,8 +145,11 @@ hazOpcion(4):-
 		5: (writeln('Dime a que actris le quieres cambiar el Rol'),read(Actor),writeln('Dame su nuevo rol'),read(Rol),
 			retract(actress(Pelicula,Actor,_)),assert(actress(Pelicula,Actor,Rol))) 	
 	]),
+	writeln('Actualizando base de datos...'),
+	escribir,
 	menu.
-
+	
+	
 hazOpcion(5):-
 	writeln('Borrar informacion de una pelicula'),
 	writeln('A que pelicula le quieres borar informacion'),
@@ -128,12 +169,12 @@ hazOpcion(5):-
 		5 : (writeln('Borrando todo...'),retract(movie(Pelicula,_)),retractall(director(Pelicula,_)),
 			 retractall(actor(Pelicula,_,_)),retractall(actress(Pelicula,_,_)))  
 		]),
+	writeln('Actualizando base de datos...'),
 	escribir,
 	menu.
 
 	
 hazOpcion(6):-
-	%writeln('Realizando todos los cambios en la base de datos')
 	writeln('Hasta pronto camarada').
 
 
@@ -144,13 +185,6 @@ switch(X, [Val:Goal|Cases]) :-
         switch(X, Cases)
     ).
 	
-	
-							
-
-%hazDatos:- open('dataBase.pl',append,S),set_output(S),listing(movie/2),listing(director/2),listing(actor/3),listing(actress/3),nl(S),close(S).
-
-%elimina:- retract(actor(charly,charly,elvato)).
-
 
 %borra:-
 %	open('dataBase.pl',write,S),
@@ -176,19 +210,6 @@ switch(X, [Val:Goal|Cases]) :-
 %	(member((X,Y),La1),assert(actor(N,X,Y)),fail;true),
 %	(member((X,Y),La2),assert(actress(N,X,Y)),fail;true).
 %	
-	
-
-
-%	switch(Info,[
-%		1: (writeln('Dame el nombre del actor que quieres borrar, en minusculas'), read(Actor),
-%			 open('movies.pl',S),retract(actor(Infor,Actor,_)),close(S)    )
-%		%2:
-%		%3:
-%		%4:
-%		%5:
-%	]),
-
-
 %open('nombrearchivo.txt'),write(S),set_output(S),write('Esto se va al archivo'),nl,close(S).
 %open('sal.txt,write S),write(S,'hola'),nl(S),close(S).
 %listing(movie/2).

@@ -78,6 +78,7 @@ hazOpcion(2) :-
              2:(writeln('Dame el nombre en minusculas'), read(Actor), writeln('Dame el rol en minusculas'), read(Rol), assert(actress(Pelicula, Actor, Rol))),
              3:(writeln('Dame el nombre del director en minusculas'), read(Director), assert(director(Pelicula, Director)))
            ]),
+    writeln('Actualizando base de datos...'),
     escribir,
     menu.
 hazOpcion(3) :-
@@ -85,7 +86,36 @@ hazOpcion(3) :-
     read(Pelicula),
     writeln('Dame el año de la pelicula'),
     read(Year),
-    assert(movie(Pelicula, Year)).
+    assert(movie(Pelicula, Year)),
+    writeln('Actualizando base de datos...'),
+    escribir.
+hazOpcion(4) :-
+    writeln('Modificar informacion de una pelicula'),
+    writeln('A que pelicula le quieres modificar informacion'),
+    read(Pelicula),
+    (   movie(Pelicula, _)
+    ->  writeln('La pelicula esta en la base de datos')
+    ;   writeln('No se encuentra en la base de datos'),
+        menu
+    ),
+    writeln('Que informacion quieres modificar'),
+    writeln('1. Titulo de pelicula'),
+    writeln('2. Año de estreno de pelicula'),
+    writeln('3. Director de una pelicula'),
+    writeln('4. Rol de actor'),
+    writeln('5. Rol de actris'),
+    read(Info),
+    switch(Info,
+           
+           [ 1:(writeln('Dame el nuevo titulo de la pelicula con _ en vez de espacios y minusculas'), read(Nuevo), movie(Pelicula, Year), findall(D, director(Pelicula, D), Ld), findall((A1, P1), actor(Pelicula, A1, P1), La1), findall((A2, P2), actress(Pelicula, A2, P2), La2), retract(movie(Pelicula, Year)), retractall(director(Pelicula, _)), retractall(actor(Pelicula, _, _)), retractall(actress(Pelicula, _, _)), assert(movie(Nuevo, Year)), (member(X, Ld), assert(director(Nuevo, X)), fail;true), (member((X, Y), La1), assert(actor(Nuevo, X, Y)), fail;true), (member((X, Y), La2), assert(actress(Nuevo, X, Y)), fail;true)),
+             2:(writeln('Dame el año de estreno'), read(Year), retract(movie(Pelicula, _)), assert(movie(Pelicula, Year))),
+             3:(masDeUno(Pelicula)->writeln('La pelicula tiene mas de un director'), writeln('Dame el nombre del viejo director'), read(Viejo), writeln('Ahora dame el nombre del nuevo director'), read(Director), retract(director(Pelicula, Viejo)), assert(director(Pelicula, Director));writeln('Dame el nuevo director'), read(Director), retract(director(Pelicula, _)), assert(director(Pelicula, Director))),
+             4:(writeln('Dime a que actor le quieres cambiar el Rol'), read(Actor), writeln('Dame su nuevo rol'), read(Rol), retract(actor(Pelicula, Actor, _)), assert(actor(Pelicula, Actor, Rol))),
+             5:(writeln('Dime a que actris le quieres cambiar el Rol'), read(Actor), writeln('Dame su nuevo rol'), read(Rol), retract(actress(Pelicula, Actor, _)), assert(actress(Pelicula, Actor, Rol)))
+           ]),
+    writeln('Actualizando base de datos...'),
+    escribir,
+    menu.
 hazOpcion(5) :-
     writeln('Borrar informacion de una pelicula'),
     writeln('A que pelicula le quieres borar informacion'),
@@ -105,6 +135,7 @@ hazOpcion(5) :-
              4:(writeln('Borrando el año'), retract(movie(Pelicula, _)), assert(movie(Pelicula, _))),
              5:(writeln('Borrando todo...'), retract(movie(Pelicula, _)), retractall(director(Pelicula, _)), retractall(actor(Pelicula, _, _)), retractall(actress(Pelicula, _, _)))
            ]),
+    writeln('Actualizando base de datos...'),
     escribir,
     menu.
 hazOpcion(6) :-
